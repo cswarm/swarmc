@@ -1,0 +1,29 @@
+{
+  "name": "node-ccswarm",
+  "version": "1.0.0",
+  "description": "Load Balancer / Sharing system for lua scripts.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jared Allard <jaredallard@outlook.com>",
+  "license": "MIT",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "debug": "^2.2.0",
+    "lua.vm.js": "^1.0.0",
+    "readline-sync": "^1.2.21",
+    "redis": "^2.3.0",
+    "tar.gz": "^1.0.2"
+  },
+  "nexe": {
+    "input": "./index.js",
+    "output": "ccswarm^$",
+    "temp": "src",
+    "runtime": {
+        "framework": "nodejs",
+        "version": "latest",
+        "ignoreFlags": true
+    }
+  }
+}
