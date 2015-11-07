@@ -12,6 +12,7 @@ var L            = require('lua.vm.js'),
     debug        = require('debug')('ccs'),
     fs           = require('fs'),
     readlineSync = require('readline-sync'),
+    log          = require('single-line-log').stdout,
     colors       = require('colors'),
     redis        = require("redis");
 
@@ -84,7 +85,8 @@ ccs.prototype.doScript = function() {
       return readlineSync.question('')
     },
     write: function() {
-      process.stdout.write(new String(this).toString('utf8'));
+      var data = new String(this).toString('utf8');
+      log(data)
     },
     host_emu_version: function() {
       return process.version;

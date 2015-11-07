@@ -11,11 +11,28 @@ var fs = require('fs'),
 
 var fsw = {
   root: './cc/',
+
+  /**
+   * Get sandbox abs path
+   **/
+  get_abs: function(rel) {
+    var root = fsw.root,
+        unintialized = "nil", // incase of issues, *NEVER* give path.
+        path = rel.replace(/^\//, '');
+
+    // remove relative paths
+    path = path.replace(/[\.]{2}\//g, '');
+
+    unintialized = root+path;
+
+    return unintialized;
+  },
+
   open: function(mode) {
     var path = this;
     var c = {};
 
-    path = fsw.root+path.replace(/^\//, '');
+    path = fsw.get_abs(path)
     debug('open', 'new file handle path='+path);
 
     if(mode === "w") {
@@ -75,7 +92,7 @@ var fsw = {
    * List files in a directory
    **/
   list: function() {
-    var path = fsw.root+this.replace(/^\//, '');
+    var path = fsw.get_abs(this)
 
     debug('list', 'path='+path)
     global.l().execute('local_table = {}');
@@ -94,7 +111,7 @@ var fsw = {
 
   exists: function() {
     var path = this;
-    path = fsw.root+this.replace(/^\//, '');
+    path = fsw.get_abs(path)
 
     return fs.existsSync(path);
   },
@@ -104,7 +121,13 @@ var fsw = {
    **/
   isDir: function() {
     var path = this;
-    path = fsw.root+this.replace(/^\//, '');
+    path = fsw.get_abs(path)
+
+
+    var regex = new RegExp('[\.\.]$');
+    if(regex.test(path)) {
+      return false;
+    }
 
     if(fs.lstatSync(path).isDirectory()) {
       return true;
@@ -118,7 +141,7 @@ var fsw = {
    **/
   getSize: function() {
     var path = this;
-    path = fsw.root+this.replace(/^\//, '');
+    path = fsw.get_abs(path())
     return fs.statSync(path['size']);
   },
 
@@ -137,6 +160,8 @@ var fsw = {
     var first = this;
 
     var res;
+    local = local.replace(/[\/]$/, ''); // remove /
+    first = first.replace(/[\/]$/, '')
     res = first.replace(/$\//, '')+'/'+local.replace(/^\//, '');
     return res;
   }
