@@ -126,6 +126,7 @@ var fsw = {
 
     var regex = new RegExp('[\.\.]$');
     if(regex.test(path)) {
+      
       return false;
     }
 
