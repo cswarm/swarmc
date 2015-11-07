@@ -93,6 +93,9 @@ ccs.prototype.doScript = function() {
     },
     host_openssl_version: function() {
       return process.versions['openssl'];
+    },
+    host_versions: function() {
+      return process.versions;
     }
   }, "njs")
 
