@@ -1,11 +1,11 @@
 # swarmc
 
-A lighweight computercraft emulator using Lua 5.2.4
+A light-weight ComputerCraft emulator using Lua 5.2.4
 
 
 ## Features
 
- * Emultates computercraft
+ * Emulates computercraft
  * Hardware accelerated crypto using OpenSSL
  * Full control over Lua VM
  * Share Lua Stack over redis.
@@ -13,6 +13,10 @@ A lighweight computercraft emulator using Lua 5.2.4
 ## Usage
 
 ```bash
+  git clone git@github.com:jaredallard/swarmc --recursive
+  -- OR WITHOUT SSH KEY --
+  git clone https://github.com/jaredallard/swarmc --recursive
+
   npm Install
   node index.js
 
