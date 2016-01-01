@@ -2,3 +2,4 @@ src
 tmp
 ccswarm
 node_modules
+nexe-built.json

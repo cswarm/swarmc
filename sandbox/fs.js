@@ -121,8 +121,7 @@ var fsw = {
    **/
   isDir: function() {
     var path = this;
-    path = fsw.get_abs(path)
-
+    path = fsw.get_abs(path);
 
     // if it's a .. path, we don't count that as a dir.
     var regex = new RegExp('[\.\.]$');

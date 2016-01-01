@@ -25,6 +25,9 @@
       "framework": "nodejs",
       "version": "latest",
       "ignoreFlags": true
-    }
+    },
+    "resourceFiles": [
+      "nexe-built.json"
+    ]
   }
 }

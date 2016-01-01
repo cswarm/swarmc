@@ -71,8 +71,7 @@ ccs.prototype.doScript = function() {
   this.l().execute(fs.readFileSync('./sandbox/os.lua', 'utf8'));
   this.l().execute(fs.readFileSync('./sandbox/redstone.lua', 'utf8'));
 
-  // inject your code here later.
-  inject_js(this.l, {
+  var njs = {
     docode: function() {
       var debug = require('debug')('njs');
 
@@ -88,7 +87,7 @@ ccs.prototype.doScript = function() {
       var data = new String(this).toString('utf8');
       log(data)
     },
-    host_emu_version: function() {
+    host_node_version: function() {
       return process.version;
     },
     host_openssl_version: function() {
@@ -96,8 +95,50 @@ ccs.prototype.doScript = function() {
     },
     host_versions: function() {
       return process.versions;
+    },
+    host_built: function() {
+      var nexeres;
+      try {
+        nexeres = require('nexeres')
+      } catch(err) {
+        return 'today'
+      }
+
+      return JSON.parse(nexeres.get('nexe-built.json')).date;
+    },
+    host_built_with: function() {
+      var nexeres;
+      try {
+        nexeres = require('nexeres')
+      } catch(err) {
+        return 'not compilied'
+      }
+
+      return JSON.parse(nexeres.get('nexe-built.json')).hardware;
+    },
+    host_emu_commit: function() {
+      var nexeres;
+      try {
+        nexeres = require('nexeres')
+      } catch(err) {
+        return fs.readFileSync('.git/refs/heads/master', 'utf8').substr(0, 7);
+      }
+
+      return JSON.parse(nexeres.get('nexe-built.json')).commit;
+    },
+    host_emu_version: function() {
+      var nexeres;
+      try {
+        nexeres = require('nexeres')
+      } catch(err) {
+        return JSON.parse(fs.readFileSync('./package.json')).version+'-'+fs.readFileSync('.git/refs/heads/master', 'utf8').substr(0, 7);
+      }
+      var nexe_data = JSON.parse(nexeres.get('nexe-built.json'));
+      return nexe_data.version+'-'+nexe_data.commit;
     }
-  }, "njs")
+  }
+
+  inject_js(this.l, njs, "njs")
 
   try {
     this.l().execute(fs.readFileSync('./cc/bios.lua', 'utf8'));
