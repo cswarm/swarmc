@@ -3,10 +3,11 @@
  * @constructor
  **/
 
-"use strict";
+'use strict';
 
 var fs = require('fs'),
     pth = require('path'),
+    lineReader = require('n-readlines'),
     debug = require('debug')('fs');
 
 var fsw = {
@@ -28,21 +29,28 @@ var fsw = {
     return unintialized;
   },
 
+  /**
+   * Open a file.
+   **/
   open: function(mode) {
     var path = this;
     var c = {};
+    let h;
 
     path = fsw.get_abs(path)
     debug('open', 'new file handle path='+path);
 
     if(mode === "w") {
+      debug('open:mode', 'w')
       var fpath = path;
+      h = fs.createWriteStream(path);
 
       /**
        * write to one line
        **/
       c.writeLine = function(data) {
-        var res = fs.writeFileSync(path, new String(data)+'\n', 'utf8');
+        debug('open:writeLine', 'path='+path);
+        h.write(data+'\n');
         return;
       }
 
@@ -50,6 +58,7 @@ var fsw = {
        * write data to the file.
        **/
       c.write = function(data) {
+        debug('open:write', 'path='+path);
         var res = fs.writeFileSync(path, data, 'utf8');
         return;
       }
@@ -57,15 +66,22 @@ var fsw = {
        * shim for flushing the data,
        **/
       c.flush = function() {
+        debug('open:flush [ignored]', 'path='+path);
         return;
       }
     }
 
     if(mode === "r") {
-      var fpath = path;
+      debug('open:mode', 'r');
+
+      let fpath = path;
+      let ln = 0;
+
+      // line reader instance
+      h = new lineReader(path);
 
       /**
-       * read file contents
+       * Read the entirety of a files contents.
        **/
       c.readAll = function() {
         debug('open:readAll', 'path='+path)
@@ -74,39 +90,62 @@ var fsw = {
       };
 
       /**
-       * shim for closing the file
+       * Get the next line in the buffer and return it.
        **/
-      c.close = function() {
-        debug('open:close', 'path='+path)
-        return;
+      c.readLine = function() {
+        debug('open:readLine', 'path='+path);
+
+        let line = h.next();
+        let lc = line.toString('utf8');
+
+        if(line === false) {
+          return;
+        }
+
+        ln++;
+
+        debug('open:readLine', 'ln='+ln);
+        debug('open:readLine', 'lc='+lc);
+        return lc;
       };
     }
 
+    // not supported.
     if(mode === "a") {
+      debug('open:mode', 'a')
+      h = fs.createWriteStream(path);
+    }
 
+    // global methods.
+    c.close = function() {
+      debug('open:close', 'path='+path);
+      if(mode === 'r') {
+        h = undefined;
+      } else {
+        h.close();
+      }
+      return;
     }
 
     return c;
   },
+
   /**
    * List files in a directory
    **/
   list: function() {
-    var path = fsw.get_abs(this)
+    let files;
+    let path = fsw.get_abs(this)
 
-    debug('list', 'path='+path)
-    global.l().execute('local_table = {}');
-    var files = fs.readdirSync(path);
+    debug('list', 'path='+path);
 
-    for (var i in files){
-      // console.log(files[i], 'add')
-      global.l().execute('local_table[#local_table+1] = "'+files[i]+'"');
+    try {
+      files = fs.readdirSync(path);
+    } catch(e) {
+      return;
     }
 
-    var res = global.l().execute('return local_table')[0];
-    global.l().execute('local_table = nil')
-
-    return res;
+    return files;
   },
 
   exists: function() {
@@ -137,11 +176,26 @@ var fsw = {
   },
 
   /**
+   * Basic shim for readonly.
+   **/
+  isReadOnly: function() {
+    var path = this;
+    path = fsw.get_abs(path);
+    let bn = pth.basename(path);
+
+    if(bn === 'bios.lua') {
+      return true;
+    } else {
+      return false;
+    }
+  },
+
+  /**
    * Get file size cc compat.
    **/
   getSize: function() {
     var path = this;
-    path = fsw.get_abs(path())
+    path = fsw.get_abs(path);
     return fs.statSync(path['size']);
   },
 
@@ -153,6 +207,11 @@ var fsw = {
     return pth.basename(this);
   },
 
+  getDir: function() {
+    let path = this;
+    return pth.dirname()
+  },
+
   /**
    * combine two paths together
    **/
@@ -160,10 +219,28 @@ var fsw = {
     var first = this;
 
     var res;
-    local = local.replace(/[\/]$/, ''); // remove /
-    first = first.replace(/[\/]$/, '')
-    res = first.replace(/$\//, '')+'/'+local.replace(/^\//, '');
+    try {
+      res = pth.join(first, local);
+    } catch(e) {
+      return;
+    }
+
     return res;
+  },
+
+  /**
+   * Create a dir
+   **/
+  makeDir: function() {
+    let path = fsw.get_abs(this);
+
+    try {
+      fs.mkdirSync(path);
+    } catch(e) {
+      // do nothing
+    }
+
+    return;
   }
 }
 

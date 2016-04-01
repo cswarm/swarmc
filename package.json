@@ -1,6 +1,6 @@
 {
   "name": "node-ccswarm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Load Balancer / Sharing system for lua scripts.",
   "main": "index.js",
   "scripts": {
@@ -10,11 +10,12 @@
   "license": "MIT",
   "dependencies": {
     "colors": "^1.1.2",
+    "deasync": "^0.1.4",
     "debug": "^2.2.0",
     "lua.vm.js": "^1.0.0",
-    "readline-sync": "^1.2.21",
+    "n-readlines": "^0.2.2",
+    "readline-sync": "^1.4.1",
     "redis": "^2.3.0",
-    "single-line-log": "^1.0.1",
     "tar.gz": "^1.0.2"
   },
   "nexe": {
