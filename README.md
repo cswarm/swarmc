@@ -8,7 +8,6 @@ A light-weight ComputerCraft emulator using Lua 5.2.4
  * Emulates computercraft
  * Hardware accelerated crypto using OpenSSL
  * Full control over Lua VM
- * Share Lua Stack over redis.
 
 ## Usage
 
@@ -17,10 +16,8 @@ A light-weight ComputerCraft emulator using Lua 5.2.4
   -- OR WITHOUT SSH KEY --
   git clone https://github.com/jaredallard/swarmc --recursive
 
-  npm Install
-  node index.js
-
-  # this runs CraftOS shell for now.
+  npm install
+  node index.js <script>
 ```
 
 ## License

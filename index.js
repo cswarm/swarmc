@@ -10,16 +10,17 @@
 
 "use strict";
 
-const L            = require('lua.vm.js'),
+const L            = require('swarm-lua'),
       debug        = require('debug')('ccs'),
       fs           = require('fs'),
       path         = require('path'),
       readlineSync = require('readline-sync'),
-      colors       = require('colors'),
-      redis        = require("redis");
+      colors       = require('colors');
 
-// scope
-let SCRIPT_ENTRY;
+
+// our libraries.
+const Njs          = require('./lib/njs.js');
+let njs;
 
 /**
  * Inject js into lua namespace.
@@ -59,7 +60,7 @@ let ccs = function(redis) {
 /**
  * Emulate a computercraft script
  *
- * @return
+ * @returns {undefined} nothing currently
  **/
 ccs.prototype.doScript = function() {
   inject_js(this.l, function() {
@@ -105,111 +106,6 @@ ccs.prototype.doScript = function() {
     throw 'Failed to load sandbox apis.';
   }
 
-  // TODO: document.
-  const njs = {
-    sys_d: require('debug')('syscall'),
-    njs_d: require('debug')('njs'),
-
-    /**
-     * This function executes the script to be "emulated"
-     **/
-    docode: function() {
-      let debug = njs.njs_d;
-
-      // internalize script, TODO: entrypoint so it actually works..
-      let script = SCRIPT_ENTRY;
-      let script_real = script;
-
-      debug('docode', 'script='+script, 'script_real='+script_real);
-      global.l().execute(fs.readFileSync(script_real, 'utf8'));
-    },
-
-    read: function() {
-      return readlineSync.question('');
-    },
-
-    raw: function() {
-      let data = this;
-
-      njs.sys_d('raw', '<data removed>');
-      console.log(data);
-    },
-
-    write: function() {
-      let data = new String(this).toString('utf8');
-
-      if(data === 'null' || data === null || data === 'nil') {
-        process.stdout.write('\n');
-        return;
-      }
-
-      njs.sys_d('write', data);
-
-      process.stdout.write(data);
-    },
-
-    host_node_version: function() {
-      return process.version;
-    },
-
-    host_openssl_version: function() {
-      return process.versions['openssl'];
-    },
-
-    host_versions: function() {
-      return process.versions;
-    },
-
-    host_built: function() {
-      let nexeres;
-
-      try {
-        nexeres = require('nexeres');
-      } catch(err) {
-        return 'today'
-      }
-
-      return JSON.parse(nexeres.get('nexe-built.json')).date;
-    },
-
-    host_built_with: function() {
-      let nexeres;
-
-      try {
-        nexeres = require('nexeres')
-      } catch(err) {
-        return 'not compilied'
-      }
-
-      return JSON.parse(nexeres.get('nexe-built.json')).hardware;
-    },
-
-    host_emu_commit: function() {
-      let nexeres;
-
-      try {
-        nexeres = require('nexeres')
-      } catch(err) {
-        return fs.readFileSync('.git/refs/heads/master', 'utf8').substr(0, 7);
-      }
-
-      return JSON.parse(nexeres.get('nexe-built.json')).commit;
-    },
-
-    host_emu_version: function() {
-      let nexeres;
-
-      try {
-        nexeres = require('nexeres')
-      } catch(err) {
-        return JSON.parse(fs.readFileSync('./package.json')).version+'-'+fs.readFileSync('.git/refs/heads/master', 'utf8').substr(0, 7);
-      }
-
-      const nexe_data = JSON.parse(nexeres.get('nexe-built.json'));
-      return nexe_data.version+'-'+nexe_data.commit;
-    }
-  }
-
   // inject sys heads
   inject_js(this.l, njs, "njs");
 
@@ -221,11 +117,11 @@ ccs.prototype.doScript = function() {
   }
 };
 
+let SCRIPT_ENTRY = process.argv[2];
+
 // initalize the new class.
-var c = new ccs(true);
+const c   = new ccs(true);
+      njs = new Njs(SCRIPT_ENTRY);
 
-// TODO OP PARSE
-SCRIPT_ENTRY=process.argv[2];
-
-// do the main script
-c.doScript();
+// start the process
+c.doScript(SCRIPT_ENTRY);

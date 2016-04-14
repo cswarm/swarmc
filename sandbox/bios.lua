@@ -8,15 +8,18 @@ print("Built On: "..tostring(njs.host_built_with()))
 
 local CRFOS = coroutine.create(function()
   print("\nlaunching crfos fork")
-  local h = fs.open('/crfos.lua', 'r')
-  local c = h.readAll()
-  local f = load(c)
-  f()
+  local h = fs.open('/crfos.lua', 'r') -- handle
+  local c = h.readAll() -- contents
+  local f = load(c) -- function
+
+  f() -- execute function
 
   -- main loop event
   while true do
     coroutine.yeild('main');
   end
+
+  print('os thread died')
 end)
 
 coroutine.resume(CRFOS)

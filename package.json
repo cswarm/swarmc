@@ -4,31 +4,36 @@
   "description": "Load Balancer / Sharing system for lua scripts.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "author": "Jared Allard <jaredallard@outlook.com>",
   "license": "MIT",
   "dependencies": {
     "colors": "^1.1.2",
-    "deasync": "^0.1.4",
     "debug": "^2.2.0",
-    "lua.vm.js": "^1.0.0",
+    "gulp": "^3.9.1",
+    "moment": "^2.12.0",
     "n-readlines": "^0.2.2",
+    "nexe": "^0.4.2",
     "readline-sync": "^1.4.1",
-    "redis": "^2.3.0",
-    "tar.gz": "^1.0.2"
+    "swarm-lua": "0.1.0"
   },
   "nexe": {
     "input": "./index.js",
-    "output": "ccswarm^$",
+    "output": "ccswarm",
     "temp": "src",
+    "python": "python",
     "runtime": {
       "framework": "nodejs",
-      "version": "latest",
+      "version": "5.4.0",
       "ignoreFlags": true
     },
     "resourceFiles": [
       "nexe-built.json"
     ]
+  },
+  "devDependencies": {
+    "gulp-util": "^3.0.7"
   }
 }
