@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+
+/**
+ * Swarmc - the all-in-one ComputerCraft CLI emulator.
+ *
+ * @author Jared Allard <jaredallard@outlook.com>
+ * @license MIT
+ * @version 1.0.0
+ **/
+
+'use strict';
+
+let SCRIPT_ENTRY = process.argv[2];
+
+const Swarmc = require("../index.js"),
+      fs     = require("fs"),
+      path   = require("path");
+
+// instance swarmc
+let swarmc   = new Swarmc(true);
+let cwd      = process.cwd();
+
+let json     = path.join(cwd, "swarmc.json");
+
+console.log("swarmc: looking for swarmc.json in", cwd);
+if(!fs.existsSync(json)) {
+  console.warn("swarmc: swarmc.json not found.");
+  console.log("swarmc: defaulting to CLI opts.")
+
+  // execute normally.
+  swarmc.doScript(SCRIPT_ENTRY);
+
+  process.exit(0);
+}
+
+console.log("swarmc: swarmc.json found.")
+
+let Json = require(json);
+swarmc.useJSON(Json);

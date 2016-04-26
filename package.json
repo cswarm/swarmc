@@ -17,6 +17,7 @@
     "n-readlines": "^0.2.2",
     "nexe": "^0.4.2",
     "readline-sync": "^1.4.1",
+    "semver": "^5.1.0",
     "swarm-lua": "0.1.0"
   },
   "nexe": {
