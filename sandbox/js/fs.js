@@ -5,50 +5,165 @@
 
 'use strict';
 
-var fs = require('fs'),
-    pth = require('path'),
-    lineReader = require('n-readlines'),
-    debug = require('debug')('fs');
+const fs         = require('fs'),
+      pth        = require('path'),
+      lineReader = require('n-readlines'),
+      debug      = require('debug')('fs');
+
+/**
+ * Get the array of locations to search for files in.
+ *
+ * @todo make it customizable.
+ * @returns {Array} array of locations.
+ **/
+let getFileOverlays = () => {
+  return [
+    {
+      dir: process.cwd()
+    },
+
+    {
+      dir: fsw.root,
+      readonly: true
+    }
+  ];
+}
+
+/**
+ * Generice Function to create an "overlay".
+ *
+ * @param {String} type - read/write
+ * @param {String} path - path to file.
+ * @param {String} mode - file mode to provide to fs#create[Type]Stream
+ *
+ * @returns {FileStream} node.js WriteStream
+ **/
+let getFileStream = (type, path, mode) => {
+  let stream = fs.createWriteStream;
+  if(type === 'read') {
+    stream   = fs.createReadStream;
+  }
+
+  let file = getFile(path);
+
+  if(!file) {
+    return false;
+  }
+
+  debug('getFileStream', 'create Stream type', type);
+
+  return stream(file, {
+    flags: mode || "w"
+  });
+}
+
+/**
+ * Find a file from overlays.
+ *
+ * @param {String} file - relative file to find.
+ * @returns {String} path of absolute file.
+ **/
+let getFile = (file) => {
+  let overlays = getFileOverlays();
+
+  // replace / with ""
+  file = file.replace(/^\//, '');
+
+  // remove relative paths
+  file = file.replace(/[\.]{2}\//g, '');
+
+  debug('getFile', 'given', file);
+
+  let path = null;
+  overlays.forEach((overlay) => {
+    let dir = overlay.dir;
+    let gen_abs = pth.join(dir, file);
+
+    debug('getFile', 'process overlay dir:', dir);
+
+    if(fs.existsSync(gen_abs) && path === null) {
+      path = gen_abs;
+    }
+  });
+
+  if(path === null) {
+    debug('getFile', 'couldn\'t find', file);
+    return false;
+  }
+
+  debug('getFile', 'found', file, 'to be at', path);
+
+  return path;
+}
+
+/**
+ * Write to a file.
+ *
+ * @param {String} path - path to file.
+ * @param {Variable} data - data to write.
+ *
+ * @returns {fs#writeFileSync} - output of that.
+ **/
+let writeFile = (path, data) => {
+  debug('writeFile', 'write file to', path);
+
+  let file = getFile(path);
+
+  if(!file) {
+    return false;
+  }
+
+  return fs.writeFileSync(file, data, 'utf8');
+}
+
+/**
+ * Read a file from the overlays.
+ *
+ * @param {String} path - path to file.
+ * @returns {fs#readFileSync} output of this.
+ **/
+let readFile = (path) => {
+  debug('readFile', 'read file from', path);
+
+  let file = getFile(path);
+
+  if(!file) {
+    return false;
+  }
+
+  console.log(file);
+
+  let contents = fs.readFileSync(file, 'utf8');
+
+  return contents;
+}
 
 var fsw = {
-  root: './cc/',
-
-  /**
-   * Get sandbox abs path
-   **/
-  get_abs: function(rel) {
-    var root = fsw.root,
-        unintialized = "nil", // incase of issues, *NEVER* give path.
-        path = rel.replace(/^\//, '');
-
-    // remove relative paths
-    path = path.replace(/[\.]{2}\//g, '');
-
-    unintialized = root+path;
-
-    return unintialized;
-  },
+  root: pth.join(__dirname, '../../cc/'),
 
   /**
    * Open a file.
+   *
+   * @param {String} mode - r,w,a
+   * @returns {Object} fs#open object
    **/
   open: function(mode) {
     var path = this;
     var c = {};
     let h;
 
-    path = fsw.get_abs(path)
     debug('open', 'new file handle path='+path);
 
     if(mode === "w") {
       debug('open:mode', 'w')
-      var fpath = path;
-      h = fs.createWriteStream(path);
+
+      let fpath = path;
+      h = getFileStream('write', path);
 
       /**
        * write to one line
        **/
-      c.writeLine = function(data) {
+      c.writeLine = data => {
         debug('open:writeLine', 'path='+path);
         h.write(data+'\n');
         return;
@@ -57,16 +172,17 @@ var fsw = {
       /**
        * write data to the file.
        **/
-      c.write = function(data) {
+      c.write = data => {
         debug('open:write', 'path='+path);
-        var res = fs.writeFileSync(path, data, 'utf8');
+
+        let res = writeFile(path, data, 'utf8');
         return;
       }
       /**
        * shim for flushing the data,
        **/
-      c.flush = function() {
-        debug('open:flush [ignored]', 'path='+path);
+      c.flush = () => {
+        debug('open:flush', 'path='+path);
         return;
       }
     }
@@ -77,22 +193,29 @@ var fsw = {
       let fpath = path;
       let ln = 0;
 
+      let file = getFile(path);
+
+      if(!file) {
+        return "nil"; // doesn't exist.
+      }
+
       // line reader instance
-      h = new lineReader(path);
+      h = new lineReader(file);
 
       /**
        * Read the entirety of a files contents.
        **/
-      c.readAll = function() {
+      c.readAll = () => {
         debug('open:readAll', 'path='+path)
-        var contents = fs.readFileSync(path, 'utf8');
+
+        let contents = readFile(path, 'utf8');
         return contents;
       };
 
       /**
        * Get the next line in the buffer and return it.
        **/
-      c.readLine = function() {
+      c.readLine = () => {
         debug('open:readLine', 'path='+path);
 
         let line = h.next();
@@ -113,17 +236,19 @@ var fsw = {
     // not supported.
     if(mode === "a") {
       debug('open:mode', 'a')
-      h = fs.createWriteStream(path);
+      h = getFileStream("write", path, "w+");
     }
 
     // global methods.
     c.close = function() {
       debug('open:close', 'path='+path);
+
       if(mode === 'r') {
         h = undefined;
       } else {
         h.close();
       }
+
       return;
     }
 
@@ -134,11 +259,11 @@ var fsw = {
    * List files in a directory
    **/
   list: function() {
-    let files;
-    let path = fsw.get_abs(this)
+    const path = getFile(this);
 
     debug('list', 'path='+path);
 
+    let files;
     try {
       files = fs.readdirSync(path);
     } catch(e) {
@@ -149,8 +274,7 @@ var fsw = {
   },
 
   exists: function() {
-    var path = this;
-    path = fsw.get_abs(path)
+    var path = getFile(this);
 
     return fs.existsSync(path);
   },
@@ -159,11 +283,14 @@ var fsw = {
    * determine if a path is a directory
    **/
   isDir: function() {
-    var path = this;
-    path = fsw.get_abs(path);
+    const path = getFile(this);
+
+    if(!path) {
+      return false;
+    }
 
     // if it's a .. path, we don't count that as a dir.
-    var regex = new RegExp('[\.\.]$');
+    let regex = new RegExp('[\.\.]$');
     if(regex.test(path)) {
       return false;
     }
@@ -179,8 +306,8 @@ var fsw = {
    * Basic shim for readonly.
    **/
   isReadOnly: function() {
-    var path = this;
-    path = fsw.get_abs(path);
+    const path = getFile(this);
+
     let bn = pth.basename(path);
 
     if(bn === 'bios.lua') {
@@ -194,8 +321,8 @@ var fsw = {
    * Get file size cc compat.
    **/
   getSize: function() {
-    var path = this;
-    path = fsw.get_abs(path);
+    const path = getFile(this);
+
     return fs.statSync(path['size']);
   },
 
@@ -203,22 +330,25 @@ var fsw = {
    * Get the name of a file
    **/
   getName: function() {
-    var path = this;
-    return pth.basename(this);
+    const path = this;
+    return pth.basename(path);
   },
 
+  /**
+   * Get the Directory from the file.
+   **/
   getDir: function() {
-    let path = this;
-    return pth.dirname()
+    const path = this;
+    return pth.dirname(path)
   },
 
   /**
    * combine two paths together
    **/
   combine: function(local) {
-    var first = this;
+    let first = this;
 
-    var res;
+    let res;
     try {
       res = pth.join(first, local);
     } catch(e) {
@@ -232,7 +362,7 @@ var fsw = {
    * Create a dir
    **/
   makeDir: function() {
-    let path = fsw.get_abs(this);
+    let path = getFile(this);
 
     try {
       fs.mkdirSync(path);

@@ -80,8 +80,8 @@ module.exports = class Swarmc {
     }, "setfenv")
 
     // include our lua sandboxes.
-    const luaapis = fs.readdirSync('./sandbox/lua');
-    const jsapis = fs.readdirSync('./sandbox/js');
+    const luaapis = fs.readdirSync(path.join(__dirname, './sandbox/lua'));
+    const jsapis = fs.readdirSync(path.join(__dirname, './sandbox/js'));
     if(luaapis && jsapis) {
       let debug = require('debug')('swarmc:api');
 
@@ -91,7 +91,7 @@ module.exports = class Swarmc {
 
         debug('load', v, 'to global', global_name);
 
-        let apio = require('./sandbox/js/'+v);
+        let apio = require(path.join(__dirname, './sandbox/js', v));
         inject_js(this.l, apio, global_name);
       });
 
@@ -99,7 +99,7 @@ module.exports = class Swarmc {
       luaapis.forEach(v => {
         debug('load', path.basename(v));
 
-        this.l().execute(fs.readFileSync(path.join('./sandbox/lua', v), 'utf8'));
+        this.l().execute(fs.readFileSync(path.join(__dirname, './sandbox/lua', v), 'utf8'));
       });
     } else {
       console.log(luaapis);
@@ -178,7 +178,7 @@ module.exports = class Swarmc {
     njs.SCRIPT_ENTRY = script;
 
     try {
-      this.l().execute(fs.readFileSync('./sandbox/bios.lua', 'utf8'));
+      this.l().execute(fs.readFileSync(path.join(__dirname, './sandbox/bios.lua'), 'utf8'));
     } catch(err) {
       console.log(colors.red(err.lua_stack));
       readlineSync.question('waiting....');

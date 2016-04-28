@@ -1,5 +1,5 @@
 {
-  "name": "node-ccswarm",
+  "name": "swarmc",
   "version": "1.0.1",
   "description": "Load Balancer / Sharing system for lua scripts.",
   "main": "index.js",
@@ -21,7 +21,7 @@
     "swarm-lua": "0.1.0"
   },
   "nexe": {
-    "input": "./index.js",
+    "input": "./bin/swarmc",
     "output": "ccswarm",
     "temp": "src",
     "python": "python",
