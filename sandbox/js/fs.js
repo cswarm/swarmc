@@ -7,6 +7,7 @@
 
 const fs         = require('fs'),
       pth        = require('path'),
+      mkdirp     = require('mkdirp'),
       lineReader = require('n-readlines'),
       debug      = require('debug')('swarmc:fs');
 
@@ -38,9 +39,8 @@ let getFileOverlays = () => {
 let getBase = (path) => {
   debug('getBase', path);
   let overlays = getFileOverlays();
-  path = serializePath(path);
 
-  path = pth.dirname(path);
+  path = path.replace(/\.[A-Z0-9]*/gi, '');
 
   let dirs = path.split("/");
 
@@ -211,9 +211,7 @@ let getFile = (file) => {
   if(path === null) {
     debug('getFile', 'couldn\'t find', file);
 
-    let filename = pth.basename(file);
-
-    return pth.join(getBase(file), filename);
+    return pth.join(getBase(file), file);
   }
 
   debug('getFile', 'found', file, 'to be at', path);
@@ -479,13 +477,23 @@ const  fsw = {
    * Create a dir
    **/
   makeDir: function() {
-    throw 'NOT IMPLEMENTED';
+    let path = getFile(this);
+
+    if(!path) {
+      return false;
+    }
+
+    debug('makeDir', path);
+
+    mkdirp.sync(path);
 
     return;
   },
 
   testBase: function() {
-    return getBase(this);
+    let path = serializePath(this);
+
+    return getBase(path);
   }
 }
 
