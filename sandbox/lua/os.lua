@@ -6,6 +6,10 @@ os.reboot = function()
   js_shutdown()
 end
 
+os.getComputerID = function()
+  return 0
+end
+
 os.startTimer = function(time)
   local osTimer = coroutine.create(function(time)
     local init = os.time()
