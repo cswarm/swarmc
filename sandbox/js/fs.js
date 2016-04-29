@@ -8,7 +8,7 @@
 const fs         = require('fs'),
       pth        = require('path'),
       lineReader = require('n-readlines'),
-      debug      = require('debug')('fs');
+      debug      = require('debug')('swarmc:fs');
 
 /**
  * Get the array of locations to search for files in.
@@ -27,6 +27,76 @@ let getFileOverlays = () => {
       readonly: true
     }
   ];
+}
+
+/**
+ * Based on file paths, determine which dir to pull from.
+ *
+ * @param {String} path - path to determine where to pull from.
+ * @returns {String} absolute path determined. Not 100&.
+ **/
+let getBase = (path) => {
+  debug('getBase', path);
+  let overlays = getFileOverlays();
+  path = serializePath(path);
+
+  path = pth.dirname(path);
+
+  let dirs = path.split("/");
+
+  const MAXSCORE = dirs.length;
+
+  // generate scoring
+  let scores = {};
+  overlays.forEach(overlay => {
+    scores[overlay.dir] = 0;
+  });
+
+  let DIRCACHE = "";
+  dirs.forEach(v => {
+    // TODO: split dir names, combine together using path, search each overlay.
+    // The one with the highest amount of matches "score" is the one to write too.
+    // in an equal match situation, we will write to the one with the highest
+    // "priority", which is determined by position in array [0] is highest.
+
+    DIRCACHE = pth.join(DIRCACHE, v);
+
+    overlays.forEach(overlay => {
+      let dir = overlay.dir;
+
+      let DIRSCORE = pth.join(dir, DIRCACHE);
+
+      if(fs.existsSync(DIRSCORE)) {
+        debug('getBase', dir, 'has', DIRSCORE);
+
+        // up the score.
+        scores[dir]++;
+      }
+    });
+  });
+
+  debug('getBase', 'max score is', MAXSCORE);
+
+  let WINNER = null
+
+  overlays.forEach(overlay => {
+    let dir   = overlay.dir;
+    let score = scores[dir];
+
+    debug('getBase', overlay.dir, 'score is', score);
+
+    // by using GTR we should avoid priority sitations.
+    if(WINNER === null || (score > WINNER.score)) {
+      WINNER = {
+        dir: overlay.dir,
+        score: score
+      };
+    }
+  });
+
+  debug('getBase', 'winner is', WINNER);
+
+  return WINNER.dir;
 }
 
 /**
@@ -70,6 +140,8 @@ let listFile = (path) => {
       return;
     }
 
+    debug('listFile', 'add', searchdir, 'to list array')
+
     let flist     = fs.readdirSync(searchdir);
 
     list          = list.concat(flist);
@@ -79,8 +151,6 @@ let listFile = (path) => {
   list = list.filter((elem, pos) => {
     return list.indexOf(elem) == pos;
   });
-
-  console.log(list);
 
   return list;
 }
@@ -140,7 +210,10 @@ let getFile = (file) => {
 
   if(path === null) {
     debug('getFile', 'couldn\'t find', file);
-    return false;
+
+    let filename = pth.basename(file);
+
+    return pth.join(getBase(file), filename);
   }
 
   debug('getFile', 'found', file, 'to be at', path);
@@ -158,6 +231,7 @@ let getFile = (file) => {
  **/
 let writeFile = (path, data) => {
   debug('writeFile', 'write file to', path);
+  debug('writeFile', 'data is:', data);
 
   let file = getFile(path);
 
@@ -188,7 +262,7 @@ let readFile = (path) => {
   return contents;
 }
 
-var fsw = {
+const  fsw = {
   root: pth.join(__dirname, '../../cc/'),
 
   /**
@@ -198,8 +272,8 @@ var fsw = {
    * @returns {Object} fs#open object
    **/
   open: function(mode) {
-    var path = this;
-    var c = {};
+    let path = this;
+    let c = {};
     let h;
 
     debug('open', 'new file handle path='+path);
@@ -213,7 +287,7 @@ var fsw = {
       /**
        * write to one line
        **/
-      c.writeLine = data => {
+      c.writeLine = function() {
         debug('open:writeLine', 'path='+path);
         h.write(data+'\n');
         return;
@@ -222,8 +296,10 @@ var fsw = {
       /**
        * write data to the file.
        **/
-      c.write = data => {
+      c.write = function() {
         debug('open:write', 'path='+path);
+
+        let data = this;
 
         let res = writeFile(path, data, 'utf8');
         return;
@@ -231,7 +307,7 @@ var fsw = {
       /**
        * shim for flushing the data,
        **/
-      c.flush = () => {
+      c.flush = function() {
         debug('open:flush', 'path='+path);
         return;
       }
@@ -255,7 +331,7 @@ var fsw = {
       /**
        * Read the entirety of a files contents.
        **/
-      c.readAll = () => {
+      c.readAll = function() {
         debug('open:readAll', 'path='+path)
 
         let contents = readFile(path, 'utf8');
@@ -265,11 +341,11 @@ var fsw = {
       /**
        * Get the next line in the buffer and return it.
        **/
-      c.readLine = () => {
+      c.readLine = function() {
         debug('open:readLine', 'path='+path);
 
         let line = h.next();
-        let lc = line.toString('utf8');
+        let lc   = line.toString('utf8');
 
         if(line === false) {
           return;
@@ -313,9 +389,11 @@ var fsw = {
   },
 
   exists: function() {
-    var path = getFile(this);
+    let path = getFile(this);
 
-    return fs.existsSync(path);
+    if(!path) return false;
+
+    return true;
   },
 
   /**
@@ -401,15 +479,13 @@ var fsw = {
    * Create a dir
    **/
   makeDir: function() {
-    let path = getFile(this);
-
-    try {
-      fs.mkdirSync(path);
-    } catch(e) {
-      // do nothing
-    }
+    throw 'NOT IMPLEMENTED';
 
     return;
+  },
+
+  testBase: function() {
+    return getBase(this);
   }
 }
 
