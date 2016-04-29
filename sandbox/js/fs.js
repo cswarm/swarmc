@@ -30,6 +30,62 @@ let getFileOverlays = () => {
 }
 
 /**
+ * Make sure the path is clean.
+ *
+ * @param {String} path - path to serialize.
+ * @returns {String} safe relative path.
+ **/
+let serializePath = (path) => {
+  // replace / with ""
+  path = path.replace(/^\//, '');
+
+  // remove relative paths
+  path = path.replace(/[\.]{2}\//g, '');
+
+  return path;
+}
+
+/**
+ * Combine overlays to generate a list of files.
+ *
+ * @param {String} path - path to search.
+ * @returns {Array} array of files.
+ **/
+let listFile = (path) => {
+
+  // Get the Overlay. Reverse the array to make the first looped last.
+  let overlays = getFileOverlays().reverse();
+
+  path = serializePath(path);
+
+  debug('list', 'path='+path);
+
+  let list = [];
+  overlays.forEach(overlay => {
+    let dir       = overlay.dir;
+    let searchdir = pth.join(dir, path);
+
+    // make sure it actually exists first.
+    if(!fs.existsSync(searchdir)) {
+      return;
+    }
+
+    let flist     = fs.readdirSync(searchdir);
+
+    list          = list.concat(flist);
+  });
+
+  // remove duplicates from before
+  list = list.filter((elem, pos) => {
+    return list.indexOf(elem) == pos;
+  });
+
+  console.log(list);
+
+  return list;
+}
+
+/**
  * Generice Function to create an "overlay".
  *
  * @param {String} type - read/write
@@ -66,11 +122,7 @@ let getFileStream = (type, path, mode) => {
 let getFile = (file) => {
   let overlays = getFileOverlays();
 
-  // replace / with ""
-  file = file.replace(/^\//, '');
-
-  // remove relative paths
-  file = file.replace(/[\.]{2}\//g, '');
+  file = serializePath(file);
 
   debug('getFile', 'given', file);
 
@@ -130,8 +182,6 @@ let readFile = (path) => {
   if(!file) {
     return false;
   }
-
-  console.log(file);
 
   let contents = fs.readFileSync(file, 'utf8');
 
@@ -259,18 +309,7 @@ var fsw = {
    * List files in a directory
    **/
   list: function() {
-    const path = getFile(this);
-
-    debug('list', 'path='+path);
-
-    let files;
-    try {
-      files = fs.readdirSync(path);
-    } catch(e) {
-      return;
-    }
-
-    return files;
+    return listFile(this);
   },
 
   exists: function() {
