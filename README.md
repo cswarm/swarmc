@@ -9,7 +9,7 @@ A light-weight ComputerCraft emulator using Lua 5.2.4
  * Hardware accelerated crypto using OpenSSL
  * Full control over Lua VM
 
-## Usage
+## Usage / Installation
 
 ```bash
   git clone git@github.com:jaredallard/swarmc --recursive
@@ -17,7 +17,8 @@ A light-weight ComputerCraft emulator using Lua 5.2.4
   git clone https://github.com/jaredallard/swarmc --recursive
 
   npm install
-  node index.js <script>
+
+  node bin/swarmc [script] # or use swarmc.json
 ```
 
 ## `swarmc.json`
