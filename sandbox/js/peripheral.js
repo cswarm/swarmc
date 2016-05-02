@@ -6,6 +6,8 @@
  * @license MIT
  **/
 
+'use strict';
+
 const request = require('request'),
       pth     = require('path'),
       fs      = require('fs'),
@@ -18,7 +20,7 @@ class Peripheral {
     self = this;
     this.peripherals = {
       right:  {
-        type: "modem"
+        type: 'modem'
       },
       left:   null,
       top:    null,
@@ -61,7 +63,7 @@ class Peripheral {
       let device = self.peripherals[side];
 
       if(device === null) {
-        return "nil";
+        return 'nil';
       }
 
       return device.type;
@@ -86,7 +88,7 @@ class Peripheral {
     if(!device) {
       // doesn't exist.
       debug('call', 'doesn\'t exist.')
-      return nil;
+      return 'nil';
     }
 
     if(!device.instance) {
@@ -98,8 +100,8 @@ class Peripheral {
       if(!fs.existsSync(SIDEWRAP)) {
         debug('call', 'device', device.type, 'hasn\'t been implemented.');
 
-        return nil
-      };
+        return 'nil';
+      }
 
       let inst = require(SIDEWRAP);
 
@@ -108,7 +110,7 @@ class Peripheral {
 
     if(!device.instance[method]) {
       debug('call', method, 'hasn\'t yet been implemented in', device.type);
-      return nil
+      return 'nil';
     }
 
     return device.instance[method](args);

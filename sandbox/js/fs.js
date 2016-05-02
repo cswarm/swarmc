@@ -1,6 +1,9 @@
 /**
- * fs
- * @constructor
+ * File System library for Swarmc.
+ *
+ * @name fs
+ * @author Jared Allard <jaredallard@outlook.com>
+ * @license MIT
  **/
 
 'use strict';
@@ -20,9 +23,9 @@ const fs         = require('fs'),
 let getFileOverlays = () => {
   return [
     {
-      dir: process.cwd()
+      dir: process.cwd(),
+      readonly: false
     },
-
     {
       dir: fsw.root,
       readonly: true
@@ -34,7 +37,7 @@ let getFileOverlays = () => {
  * Based on file paths, determine which dir to pull from.
  *
  * @param {String} path - path to determine where to pull from.
- * @returns {String} absolute path determined. Not 100&.
+ * @returns {String} absolute path determined. Not 100%.
  **/
 let getBase = (path) => {
   debug('getBase', path);
@@ -42,7 +45,7 @@ let getBase = (path) => {
 
   path = path.replace(/\.[A-Z0-9]*/gi, '');
 
-  let dirs = path.split("/");
+  let dirs = path.split('/');
 
   const MAXSCORE = dirs.length;
 
@@ -52,7 +55,7 @@ let getBase = (path) => {
     scores[overlay.dir] = 0;
   });
 
-  let DIRCACHE = "";
+  let DIRCACHE = '';
   dirs.forEach(v => {
     // TODO: split dir names, combine together using path, search each overlay.
     // The one with the highest amount of matches "score" is the one to write too.
